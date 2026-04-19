@@ -1,0 +1,2 @@
+vpc_id,route_table_role,destination_cidr,target_type
+core,pub,0.0.0.0/0,igw

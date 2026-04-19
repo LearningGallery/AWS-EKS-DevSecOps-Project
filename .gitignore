@@ -1,0 +1,54 @@
+# === Terraform ===
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# === Terraform variables and secrets ===
+*.tfvars
+*.tfvars.json
+*.tfplan
+*.tfplan.*
+secrets/
+*.gpg
+
+# === Shell & bootstrap ===
+*.sh~
+*.log
+*.bak
+*.swp
+nohup.out
+
+# === Packer Cache (if used) ===
+packer_cache/
+
+# === System & OS Files ===
+.DS_Store
+Thumbs.db
+
+# === Editor folders ===
+.vscode/
+.idea/
+*.code-workspace
+
+# === GitHub Actions Temporary Files ===
+.github/workflows/*.bak
+.github/workflows/*.tmp
+
+# === Python (if scripts are included) ===
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# === Archives ===
+*.zip
+*.tar.gz
+*.tar
+*.tgz
+*.rar
+
+# === Env files (local testing) ===
+.env
+.env.*
+local.tfvars

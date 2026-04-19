@@ -1,0 +1,4 @@
+role_id,trusted_service,managed_policies
+app_role,ec2.amazonaws.com,arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+eks_cluster_role,eks.amazonaws.com,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+eks_node_role,ec2.amazonaws.com,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy;arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly;arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy

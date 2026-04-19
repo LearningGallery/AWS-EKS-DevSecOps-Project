@@ -1,0 +1,3 @@
+repo_name,mutability,scan_on_push
+frontend-app,IMMUTABLE,true
+backend-api,IMMUTABLE,true

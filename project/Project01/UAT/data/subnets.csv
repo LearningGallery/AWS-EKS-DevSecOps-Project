@@ -1,0 +1,5 @@
+id,vpc_id,cidr_block,az,is_public,role
+web_az1,core,10.0.1.0/24,ap-southeast-1a,true,web
+web_az2,core,10.0.2.0/24,ap-southeast-1b,true,web
+eks_az1,core,10.0.10.0/24,ap-southeast-1a,false,eks
+eks_az2,core,10.0.11.0/24,ap-southeast-1b,false,eks

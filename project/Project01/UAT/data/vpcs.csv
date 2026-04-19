@@ -1,0 +1,2 @@
+vpc_id,project,env,cidr_block,network_zone
+core,cis,uat,10.0.0.0/16,ia
