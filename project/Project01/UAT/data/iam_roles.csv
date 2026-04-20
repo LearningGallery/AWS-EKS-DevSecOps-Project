@@ -1,4 +1,2 @@
-role_id,trusted_service,managed_policies
-app_role,ec2.amazonaws.com,arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-eks_cluster_role,eks.amazonaws.com,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
-eks_node_role,ec2.amazonaws.com,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy;arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly;arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+role_id,project,env,trusted_service,managed_policies,custom_policy_file,create_instance_profile
+ec2-profile,cis,uat,ec2.amazonaws.com,arn:aws:iam::aws:policy/AdministratorAccess;arn:aws:iam::aws:policy/AmazonEC2FullAccess;arn:aws:iam::aws:policy/AmazonEKSClusterPolicy;arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy;arn:aws:iam::aws:policy/AWSCloudFormationFullAccess;arn:aws:iam::aws:policy/IAMFullAccess,policies/eks_custom_policy.json,true

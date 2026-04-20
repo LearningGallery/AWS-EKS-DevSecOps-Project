@@ -4,29 +4,29 @@ resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = { Name = "vp-${local.base}" }
+  tags = { Name = "vp-${local.base}-01" }
 }
 resource "aws_internet_gateway" "internet_gateway" {
   count  = length([for k, v in var.subnets : v if v.is_public]) > 0 ? 1 : 0
   vpc_id = aws_vpc.vpc.id
-  tags = { Name = "ig-${local.base}" }
+  tags = { Name = "ig-${local.base}-${format("%02d", count.index + 1)}" }
 }
 resource "aws_subnet" "subnets" {
   for_each          = var.subnets
   vpc_id            = aws_vpc.vpc.id
   cidr_block        = each.value.cidr_block
   availability_zone = each.value.az
-  tags = { Name = "sn-${local.base}-${each.value.role}-${split("-", each.value.az)[2]}", Tier = each.value.is_public ? "Public" : "Private" }
+  tags = { Name = "sn-${local.base}-${each.value.role}-${split("-", each.value.az)[2]}-${format("%02d", index(keys(var.subnets), each.key) + 1)}", Tier = each.value.is_public ? "Public" : "Private" }
 }
 resource "aws_route_table" "route_table_public" {
   count  = length([for k, v in var.subnets : v if v.is_public]) > 0 ? 1 : 0
   vpc_id = aws_vpc.vpc.id
-  tags   = { Name = "rt-${local.base}-pub" }
+  tags   = { Name = "rt-${local.base}-pub-${format("%02d", count.index + 1)}" }
 }
 resource "aws_route_table" "route_table_private" {
   for_each = toset([for k, v in var.subnets : v.role if !v.is_public])
   vpc_id   = aws_vpc.vpc.id
-  tags     = { Name = "rt-${local.base}-${each.key}" }
+  tags     = { Name = "rt-${local.base}-${each.key}-01" }
 }
 resource "aws_route_table_association" "route_table_association" {
   for_each       = var.subnets
@@ -43,7 +43,7 @@ resource "aws_security_group" "security_group" {
   for_each    = toset([for k, v in var.subnets : v.role])
   name        = "${local.base}-${each.key}-sg"
   vpc_id      = aws_vpc.vpc.id
-  tags        = { Name = "sg-${local.base}-${each.key}" }
+  tags        = { Name = "sg-${local.base}-${each.key}-01" }
 }
 resource "aws_security_group_rule" "security_group_rule" {
   for_each                 = { for idx, rule in var.sg_rules : "${rule.sg_role}-${rule.type}-${idx}" => rule }
@@ -60,7 +60,7 @@ resource "aws_network_acl" "network_acl" {
   for_each   = toset([for k, v in var.subnets : v.role])
   vpc_id     = aws_vpc.vpc.id
   subnet_ids = [for k, v in var.subnets : aws_subnet.subnets[k].id if v.role == each.key]
-  tags       = { Name = "nl-${local.base}-${each.key}" }
+  tags       = { Name = "nl-${local.base}-${each.key}-01" }
 }
 
 resource "aws_network_acl_rule" "network_acl_rule" {

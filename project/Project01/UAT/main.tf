@@ -11,16 +11,21 @@ locals {
 
   # 2. Transform into Maps
   vpc_map     = { for r in local.raw_vpcs : r.vpc_id => r }
-  iam_map     = { for r in local.raw_iam : r.role_id => { trusted_service = r.trusted_service, managed_policies = split(";", r.managed_policies) } }
+  iam_map     = { for r in local.raw_iam : r.role_id => { project = r.project, env = r.env, trusted_service = r.trusted_service, managed_policies = r.managed_policies, custom_policy_file = r.custom_policy_file, create_instance_profile = tobool(r.create_instance_profile) } }
   subnet_map  = { for r in local.raw_subnets : r.id => { vpc_id = r.vpc_id, cidr_block = r.cidr_block, az = r.az, is_public = tobool(r.is_public), role = r.role } }
   ec2_map     = { for r in local.raw_ec2 : r.tier => r }
   ecr_map     = { for r in local.raw_ecr : r.repo_name => { repo_name = r.repo_name, mutability = r.mutability, scan_on_push = tobool(r.scan_on_push) } }
 
 }
 
-/* # ---------------------------------------------------------
+# ---------------------------------------------------------
 # IAM Engine
 # ---------------------------------------------------------
+module "core_iam" {
+  source = "../../../modules/iam"
+  roles  = local.iam_map
+}
+/*
 module "core_iam" {
   source       = "../../../modules/iam"
   project_code = var.project_code

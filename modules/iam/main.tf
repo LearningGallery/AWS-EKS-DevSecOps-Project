@@ -1,30 +1,59 @@
-data "aws_iam_policy_document" "iam_assume_role" {
-  for_each = var.roles
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals { 
-        type = "Service" 
-        identifiers = [each.value.trusted_service] 
-    }
-  }
-}
-resource "aws_iam_role" "iam_role" {
-  for_each           = var.roles
-  name               = "role-${var.project_code}-${var.environment}-${each.key}"
-  assume_role_policy = data.aws_iam_policy_document.iam_assume_role[each.key].json
-}
 locals {
-  role_policies = flatten([for r_id, r_cfg in var.roles : [for p in r_cfg.managed_policies : { role_id = r_id, policy_arn = p }]])
+  # This flattens the semicolon-separated policies into individual attachments
+  managed_policy_attachments = flatten([
+    for role_key, role_val in var.roles : [
+      for policy in split(";", role_val.managed_policies) : {
+        role_key = role_key
+        policy   = policy
+      } if policy != ""
+    ]
+  ])
 }
-resource "aws_iam_role_policy_attachment" "iam_role_policy_attachment" {
-  for_each   = { for rp in local.role_policies : "${rp.role_id}-${rp.policy_arn}" => rp }
-  role       = aws_iam_role.iam_role[each.value.role_id].name
-  policy_arn = each.value.policy_arn
-}
-resource "aws_iam_instance_profile" "iam_instance_profile" {
+
+# 1. Create the Roles
+resource "aws_iam_role" "role" {
   for_each = var.roles
-  name     = "profile-${var.project_code}-${var.environment}-${each.key}"
-  role     = aws_iam_role.iam_role[each.key].name
+  name     = "rl-${each.value.project}-${each.value.env}-${each.key}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = { Service = each.value.trusted_service }
+      }
+    ]
+  })
 }
-output "instance_profile_names" { value = { for k, v in aws_iam_instance_profile.iam_instance_profile : k => v.name } }
-output "role_arns" { value = { for k, v in aws_iam_role.iam_role : k => v.arn } }
+
+# 2. Conditionally Create Custom Policies
+resource "aws_iam_policy" "custom_policy" {
+  for_each = { for k, v in var.roles : k => v if v.custom_policy_file != "" }
+  
+  name   = "pl-${each.value.project}-${each.value.env}-${each.key}-custom"
+  policy = file("${path.root}/${each.value.custom_policy_file}") 
+}
+
+# 3. Attach the Custom Policies
+resource "aws_iam_role_policy_attachment" "custom_attach" {
+  for_each   = aws_iam_policy.custom_policy
+  role       = aws_iam_role.role[each.key].name
+  policy_arn = each.value.arn
+}
+
+# 4. Attach the Managed Policies (Using the flattened local list)
+resource "aws_iam_role_policy_attachment" "managed_attach" {
+  for_each = { for item in local.managed_policy_attachments : "${item.role_key}-${item.policy}" => item }
+  
+  role       = aws_iam_role.role[each.value.role_key].name
+  policy_arn = each.value.policy
+}
+
+# 5. Conditionally Create Instance Profiles
+resource "aws_iam_instance_profile" "profile" {
+  for_each = { for k, v in var.roles : k => v if v.create_instance_profile }
+  
+  name = "ip-${each.value.project}-${each.value.env}-${each.key}"
+  role = aws_iam_role.role[each.key].name
+}
