@@ -107,7 +107,8 @@ log_info "Configuring PostgreSQL..."
 if [ ! -f /var/lib/pgsql/data/PG_VERSION ]; then
     log_info "Initializing fresh PostgreSQL database..."
     # Clear directory in case of leftover fragments from a crashed run
-    rm -rf /var/lib/pgsql/data/* postgresql-setup --initdb
+    rm -rf /var/lib/pgsql/data/* 
+    postgresql-setup --initdb
 else
     log_info "PostgreSQL already initialized. Skipping initdb."
 fi
