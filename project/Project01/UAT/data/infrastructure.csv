@@ -1,2 +1,2 @@
 tier,vpc_id,project,env,zone,role,count,instance_types,ami_id,key_name,subnet_ids,sg_ids,iam_profile,vol_size,vol_type,vol_encrypt,public_ip,monitor,api_term,userdata_file,cost_center,owner
-mgm,core,cis,uat,ie,tvm,1,t3.medium,ami-03c3282f979a6a9b0,learninggallery,web_az1,sg-web,ec2-profile,30,gp3,true,true,true,false,scripts/install-tools.sh,012345,AbuTalha
+mgm,core,cis,uat,ie,tvm,1,t3.medium,ami-03c3282f979a6a9b0,learninggallery,web_az1,sg-web,ec2-profile,30,gp3,true,true,true,false,scripts/updated_install-tools.sh,012345,AbuTalha
