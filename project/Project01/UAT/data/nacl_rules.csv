@@ -3,6 +3,10 @@ core,web,100,ingress,allow,443,443,tcp,0.0.0.0/0
 core,web,110,ingress,allow,22,22,tcp,0.0.0.0/0
 core,web,120,ingress,allow,3389,3389,tcp,0.0.0.0/0
 core,web,130,ingress,allow,1024,65535,tcp,0.0.0.0/0
+core,web,140,ingress,allow,8080,8080,tcp,0.0.0.0/0
+core,web,150,ingress,allow,9000,9000,tcp,0.0.0.0/0
+core,web,160,ingress,allow,9090,9090,tcp,0.0.0.0/0
+core,web,170,ingress,allow,3306,3306,tcp,0.0.0.0/0
 core,web,100,egress,allow,443,443,tcp,0.0.0.0/0
 core,web,110,egress,allow,1024,65535,tcp,0.0.0.0/0
 core,web,120,egress,allow,80,80,tcp,0.0.0.0/0
