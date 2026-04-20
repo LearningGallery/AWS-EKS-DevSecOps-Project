@@ -25,14 +25,6 @@ module "core_iam" {
   source = "../../../modules/iam"
   roles  = local.iam_map
 }
-/*
-module "core_iam" {
-  source       = "../../../modules/iam"
-  project_code = var.project_code
-  environment  = var.environment
-  roles        = local.iam_map
-}
-*/
 
 # ---------------------------------------------------------
 # VPC Engine
@@ -51,35 +43,39 @@ module "core_vpc" {
 
 }
 
-/*
 # ---------------------------------------------------------
 # EC2 Engine
 # ---------------------------------------------------------
 module "ec2_infrastructure" {
-  source   = "./modules/ec2_tier"
+  source   = "../../../modules/ec2"
   for_each = local.ec2_map
 
-  project_code   = local.project
-  environment    = local.env
-  network_zone   = local.zone
+  project_code   = each.value.project
+  environment    = each.value.env
+  network_zone   = each.value.zone
   role           = each.value.role
   instance_count = tonumber(each.value.count)
   instance_types = split(";", each.value.instance_types)
   ami_id         = each.value.ami_id
-
-  # Dynamic Lookups from VPC Module output
-  subnet_ids             = [for sid in split(";", each.value.subnet_ids) : module.core_vpc.subnet_ids[sid]]
-  vpc_security_group_ids = [for sg in split(";", each.value.sg_ids) : module.core_vpc.sg_ids[sg]]
+  key_name      = each.value.key_name
   
-  # Dynamic Lookup from IAM Module output
+  # Implicit Dependency: Network
+  # Looks up the specific VPC map first, then grabs the correct subnet/sg ID
+  subnet_ids             = [for sid in split(";", each.value.subnet_ids) : module.core_vpc[each.value.vpc_id].subnet_ids[sid]]
+  vpc_security_group_ids = [for sg in split(";", each.value.sg_ids) : module.core_vpc[each.value.vpc_id].sg_ids[sg]]
+  
+  # Implicit Dependency: Identity
+  # Waits for the IAM module to generate the profile before assigning
   iam_instance_profile = each.value.iam_profile != "" ? module.core_iam.instance_profile_names[each.value.iam_profile] : null
 
   root_volume_size = tonumber(each.value.vol_size)
   root_volume_type = each.value.vol_type
   encrypted        = tobool(each.value.vol_encrypt)
-  user_data        = each.value.userdata_file != "" ? file("${path.module}/${each.value.userdata_file}") : null
+  associate_public_ip_address = tobool(each.value.public_ip)
+  # Safe lookup for the bootstrap script
+  user_data = each.value.userdata_file != "" ? file("${path.module}/${each.value.userdata_file}") : null
 }
-
+/*
 # ---------------------------------------------------------
 # ECR Engine
 # ---------------------------------------------------------

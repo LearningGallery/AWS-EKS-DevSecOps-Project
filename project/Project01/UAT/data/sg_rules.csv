@@ -2,4 +2,6 @@ vpc_id,sg_role,type,from_port,to_port,protocol,source_type,source,description
 core,web,ingress,443,443,tcp,cidr,0.0.0.0/0,Allow HTTPS
 core,web,ingress,22,22,tcp,cidr,0.0.0.0/0,Allow SSH
 core,web,ingress,3389,3389,tcp,cidr,0.0.0.0/0,Allow RDP
+core,web,egress,443,443,tcp,cidr,0.0.0.0/0,Allow outbound HTTPS for SSM
+core,web,egress,80,80,tcp,cidr,0.0.0.0/0,Allow outbound HTTP for Yum/S3
 core,eks,ingress,443,443,tcp,sg,web,Allow Web to EKS

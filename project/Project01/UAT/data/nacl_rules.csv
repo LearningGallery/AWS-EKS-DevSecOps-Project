@@ -1,3 +1,9 @@
 vpc_id,nacl_role,rule_no,type,action,from_port,to_port,protocol,cidr_block
 core,web,100,ingress,allow,443,443,tcp,0.0.0.0/0
+core,web,110,ingress,allow,22,22,tcp,0.0.0.0/0
+core,web,120,ingress,allow,3389,3389,tcp,0.0.0.0/0
+core,web,130,ingress,allow,1024,65535,tcp,0.0.0.0/0
+core,web,100,egress,allow,443,443,tcp,0.0.0.0/0
+core,web,110,egress,allow,1024,65535,tcp,0.0.0.0/0
+core,web,120,egress,allow,80,80,tcp,0.0.0.0/0
 core,eks,100,ingress,allow,443,443,tcp,10.0.0.0/16

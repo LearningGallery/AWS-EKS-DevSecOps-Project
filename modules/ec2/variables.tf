@@ -90,3 +90,13 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
+variable "associate_public_ip_address" {
+  description = "Whether to associate a public IP address with the instance"
+  type        = bool
+  default     = false
+}
+variable "key_name" {
+  description = "The name of the SSH Key Pair to attach to the instances"
+  type        = string
+  default     = null # Allows instances to be built without a key if left blank
+}
