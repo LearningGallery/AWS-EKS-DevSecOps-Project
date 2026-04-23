@@ -10,4 +10,12 @@ core,web,170,ingress,allow,3306,3306,tcp,0.0.0.0/0
 core,web,100,egress,allow,443,443,tcp,0.0.0.0/0
 core,web,110,egress,allow,1024,65535,tcp,0.0.0.0/0
 core,web,120,egress,allow,80,80,tcp,0.0.0.0/0
+
 core,eks,100,ingress,allow,443,443,tcp,10.0.0.0/16
+core,eks,110,ingress,allow,1024,65535,tcp,0.0.0.0/0
+core,eks,120,ingress,allow,1024,65535,udp,0.0.0.0/0
+
+core,eks,100,egress,allow,443,443,tcp,0.0.0.0/0
+core,eks,110,egress,allow,53,53,udp,0.0.0.0/0
+core,eks,120,egress,allow,53,53,tcp,0.0.0.0/0
+core,eks,130,egress,allow,1024,65535,tcp,0.0.0.0/0

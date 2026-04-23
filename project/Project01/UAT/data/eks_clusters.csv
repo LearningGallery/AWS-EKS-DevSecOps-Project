@@ -1,0 +1,2 @@
+cluster_id,project,environment,k8s_version,vpc_id,subnet_ids,endpoint_private,endpoint_public,cluster_iam_role,node_iam_role
+eks_main,cis,uat,1.31,core,web_az1;web_az2,true,true,eks-master,eks-node

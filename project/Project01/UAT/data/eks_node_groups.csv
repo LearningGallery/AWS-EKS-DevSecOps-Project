@@ -1,0 +1,2 @@
+ng_id,cluster_id,instance_types,capacity_type,min_size,max_size,desired_size,disk_size
+ng_app,eks_main,t3.large,ON_DEMAND,2,10,3,20

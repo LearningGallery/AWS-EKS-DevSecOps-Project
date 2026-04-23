@@ -1,13 +1,15 @@
 locals {
   # 1. Read all CSVs
-  raw_vpcs    = csvdecode(file("${path.module}/data/vpcs.csv"))
-  raw_iam     = csvdecode(file("${path.module}/data/iam_roles.csv"))
-  raw_subnets = csvdecode(file("${path.module}/data/subnets.csv"))
-  raw_sg      = csvdecode(file("${path.module}/data/sg_rules.csv"))
-  raw_nacl    = csvdecode(file("${path.module}/data/nacl_rules.csv"))
-  raw_route   = csvdecode(file("${path.module}/data/route_rules.csv"))
-  raw_ec2     = csvdecode(file("${path.module}/data/infrastructure.csv"))
-  raw_ecr     = csvdecode(file("${path.module}/data/ecr_repositories.csv"))
+  raw_vpcs          = csvdecode(file("${path.module}/data/vpcs.csv"))
+  raw_iam           = csvdecode(file("${path.module}/data/iam_roles.csv"))
+  raw_subnets       = csvdecode(file("${path.module}/data/subnets.csv"))
+  raw_sg            = csvdecode(file("${path.module}/data/sg_rules.csv"))
+  raw_nacl          = csvdecode(file("${path.module}/data/nacl_rules.csv"))
+  raw_route         = csvdecode(file("${path.module}/data/route_rules.csv"))
+  raw_ec2           = csvdecode(file("${path.module}/data/infrastructure.csv"))
+  raw_ecr           = csvdecode(file("${path.module}/data/ecr_repositories.csv"))
+  raw_eks_clusters  = csvdecode(file("${path.module}/data/eks_clusters.csv"))
+  raw_eks_nodes     = csvdecode(file("${path.module}/data/eks_node_groups.csv"))
 
   # 2. Transform into Maps
   vpc_map     = { for r in local.raw_vpcs : r.vpc_id => r }
@@ -15,6 +17,8 @@ locals {
   subnet_map  = { for r in local.raw_subnets : r.id => { vpc_id = r.vpc_id, cidr_block = r.cidr_block, az = r.az, is_public = tobool(r.is_public), role = r.role } }
   ec2_map     = { for r in local.raw_ec2 : r.tier => r }
   ecr_map     = { for r in local.raw_ecr : r.service_name => { project = r.project, environment = r.environment, repo_name = r.service_name, mutability = r.image_mutability, scan_on_push = tobool(lower(r.scan_on_push)), max_images = tonumber(r.max_images) } }
+  eks_cluster_map = { for r in local.raw_eks_clusters : r.cluster_id => { project = r.project, environment = r.environment, cluster_id = r.cluster_id, k8s_version = r.k8s_version, vpc_id = r.vpc_id, subnet_ids = split(";", r.subnet_ids), endpoint_private = tobool(r.endpoint_private), endpoint_public = tobool(r.endpoint_public), cluster_iam_role = r.cluster_iam_role, node_iam_role = r.node_iam_role } }
+  eks_node_map = { for r in local.raw_eks_nodes : r.ng_id => { cluster_id = r.cluster_id, instance_types = split(";", r.instance_types), capacity_type = r.capacity_type, min_size = tonumber(r.min_size), max_size = tonumber(r.max_size), desired_size = tonumber(r.desired_size), disk_size = tonumber(r.disk_size) } }
 }
 
 # ---------------------------------------------------------
@@ -39,7 +43,6 @@ module "core_vpc" {
   sg_rules     = [ for r in local.raw_sg : r if r.vpc_id == each.key ]
   nacl_rules   = [ for r in local.raw_nacl : r if r.vpc_id == each.key ]
   route_rules  = [ for r in local.raw_route : r if r.vpc_id == each.key ]
-
 }
 
 # ---------------------------------------------------------
@@ -83,21 +86,47 @@ module "core_ecr" {
   repositories = local.ecr_map
 }
 
-/*
 # ---------------------------------------------------------
 # EKS Engine
 # ---------------------------------------------------------
 module "core_eks" {
-  source       = "./modules/eks_base"
-  project_code = local.project
-  environment  = local.env
-  network_zone = local.zone
+  source   = "../../../modules/eks"
+  for_each = local.eks_cluster_map
 
-  # Pass only the subnets labeled for EKS
-  subnet_ids = [for k, v in module.core_vpc.subnet_ids : v if length(regexall("^eks_", k)) > 0]
+  project          = each.value.project
+  environment      = each.value.environment
+  cluster_name     = each.value.cluster_id
+  k8s_version      = each.value.k8s_version
   
-  # Fetch ARNs explicitly from the IAM module
-  cluster_role_arn = module.core_iam.role_arns["eks_cluster_role"]
-  node_role_arn    = module.core_iam.role_arns["eks_node_role"]
+  # Dynamic Network Resolution! Looks up actual subnet IDs from the VPC module
+  subnet_ids       = [for sid in each.value.subnet_ids : module.core_vpc[each.value.vpc_id].subnet_ids[sid]]
+  
+  endpoint_private = each.value.endpoint_private
+  endpoint_public  = each.value.endpoint_public
+
+  # Injects the ARNs dynamically from your IAM module based on the trusted service relationship defined in the CSV
+  cluster_role_arn = module.core_iam.role_arns[each.value.cluster_iam_role]
+  node_role_arn    = module.core_iam.role_arns[each.value.node_iam_role]
+
+  # Pass only the node groups that belong to THIS specific cluster
+  node_groups = { for k, v in local.eks_node_map : k => v if v.cluster_id == each.key }
 }
-*/
+
+# ---------------------------------------------------------
+# EKS OIDC Providers (Zero Trust IRSA)
+# ---------------------------------------------------------
+# 1. Dynamically fetch the TLS certificates from the newly created EKS clusters
+data "tls_certificate" "eks" {
+  for_each = module.core_eks
+  
+  url      = each.value.oidc_issuer_url
+}
+
+# 2. Create the IAM OIDC Providers for Least Privilege Pod Access
+resource "aws_iam_openid_connect_provider" "eks" {
+  for_each        = module.core_eks
+  
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks[each.key].certificates[0].sha1_fingerprint]
+  url             = each.value.oidc_issuer_url
+}

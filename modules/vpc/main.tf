@@ -16,6 +16,7 @@ resource "aws_subnet" "subnets" {
   vpc_id            = aws_vpc.vpc.id
   cidr_block        = each.value.cidr_block
   availability_zone = each.value.az
+  map_public_ip_on_launch = each.value.is_public
   tags = { Name = "sn-${local.base}-${each.value.role}-${split("-", each.value.az)[2]}-${format("%02d", index(keys(var.subnets), each.key) + 1)}", Tier = each.value.is_public ? "Public" : "Private" }
 }
 resource "aws_route_table" "route_table_public" {
