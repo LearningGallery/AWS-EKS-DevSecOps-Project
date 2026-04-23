@@ -7,15 +7,14 @@ locals {
   raw_nacl    = csvdecode(file("${path.module}/data/nacl_rules.csv"))
   raw_route   = csvdecode(file("${path.module}/data/route_rules.csv"))
   raw_ec2     = csvdecode(file("${path.module}/data/infrastructure.csv"))
-  raw_ecr     = csvdecode(file("${path.module}/data/ecr_repos.csv"))
+  raw_ecr     = csvdecode(file("${path.module}/data/ecr_repositories.csv"))
 
   # 2. Transform into Maps
   vpc_map     = { for r in local.raw_vpcs : r.vpc_id => r }
   iam_map     = { for r in local.raw_iam : r.role_id => { project = r.project, env = r.env, trusted_service = r.trusted_service, managed_policies = r.managed_policies, custom_policy_file = r.custom_policy_file, create_instance_profile = tobool(r.create_instance_profile) } }
   subnet_map  = { for r in local.raw_subnets : r.id => { vpc_id = r.vpc_id, cidr_block = r.cidr_block, az = r.az, is_public = tobool(r.is_public), role = r.role } }
   ec2_map     = { for r in local.raw_ec2 : r.tier => r }
-  ecr_map     = { for r in local.raw_ecr : r.repo_name => { repo_name = r.repo_name, mutability = r.mutability, scan_on_push = tobool(r.scan_on_push) } }
-
+  ecr_map     = { for r in local.raw_ecr : r.service_name => { project = r.project, environment = r.environment, repo_name = r.service_name, mutability = r.image_mutability, scan_on_push = tobool(lower(r.scan_on_push)), max_images = tonumber(r.max_images) } }
 }
 
 # ---------------------------------------------------------
@@ -75,17 +74,16 @@ module "ec2_infrastructure" {
   # Safe lookup for the bootstrap script
   user_data = each.value.userdata_file != "" ? file("${path.module}/${each.value.userdata_file}") : null
 }
-/*
+
 # ---------------------------------------------------------
 # ECR Engine
 # ---------------------------------------------------------
 module "core_ecr" {
-  source       = "./modules/ecr_base"
-  project_code = local.project
-  environment  = local.env
+  source       = "../../../modules/ecr"
   repositories = local.ecr_map
 }
 
+/*
 # ---------------------------------------------------------
 # EKS Engine
 # ---------------------------------------------------------

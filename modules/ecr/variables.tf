@@ -1,24 +1,11 @@
-variable "project_code" {
-  description = "3-character project code (e.g., cis)"
-  type        = string
-}
-
-variable "environment" {
-  description = "Environment tier (e.g., prd, uat)"
-  type        = string
-}
-
 variable "repositories" {
-  description = "Map of ECR repository configurations parsed from ecr_repos.csv"
+  description = "Map of ECR repository configurations from the CSV data engine"
   type = map(object({
+    project      = string
+    environment  = string
     repo_name    = string
-    mutability   = string # e.g., MUTABLE or IMMUTABLE
+    mutability   = string
     scan_on_push = bool
+    max_images   = number
   }))
-}
-
-variable "common_tags" {
-  description = "Common tags to apply to all ECR repositories"
-  type        = map(string)
-  default     = {}
 }

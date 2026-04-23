@@ -1,0 +1,12 @@
+project,environment,service_name,image_mutability,scan_on_push,max_images
+cis,uat,emailservice,IMMUTABLE,TRUE,30
+cis,uat,checkoutservice,IMMUTABLE,TRUE,30
+cis,uat,recommendationservice,IMMUTABLE,TRUE,30
+cis,uat,frontend,IMMUTABLE,TRUE,30
+cis,uat,paymentservice,IMMUTABLE,TRUE,30
+cis,uat,productcatalogservice,IMMUTABLE,TRUE,30
+cis,uat,cartservice,IMMUTABLE,TRUE,30
+cis,uat,loadgenerator,IMMUTABLE,TRUE,30
+cis,uat,currencyservice,IMMUTABLE,TRUE,30
+cis,uat,shippingservice,IMMUTABLE,TRUE,30
+cis,uat,adservice,IMMUTABLE,TRUE,30
