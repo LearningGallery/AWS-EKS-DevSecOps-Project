@@ -9,8 +9,8 @@ locals {
 resource "aws_ecr_repository" "registry" {
   for_each = local.repos
 
-  # Standard Naming Convention: project/environment/service
-  name                 = "${each.value.project}/${each.value.environment}/${each.value.repo_name}"
+  # Standard Naming Convention: project-environment-service
+  name                 = "${each.value.project}-${each.value.environment}-${each.value.repo_name}"
   
   # Supply Chain Security: Prevent tag overwriting
   image_tag_mutability = each.value.mutability
