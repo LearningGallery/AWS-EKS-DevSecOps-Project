@@ -79,14 +79,15 @@ def buildAndPush(String serviceName) {
             if (serviceName == 'cartservice') {
                 dockerfilePath = "src/Dockerfile" // Tell Docker to look one folder deeper!
             }
-            sh """
-                docker build -t ${serviceName}:${env.IMAGE_TAG} .
-                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
-                docker tag ${serviceName}:${env.IMAGE_TAG} ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
-                docker push ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
+        }
+        sh """
+            docker build -t ${serviceName}:${env.IMAGE_TAG} .
+            aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
+            docker tag ${serviceName}:${env.IMAGE_TAG} ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
+            docker push ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
                 
-                # Clean up the local Docker image immediately to save Jenkins disk space
-                docker rmi ${serviceName}:${env.IMAGE_TAG} || true
+            # Clean up the local Docker image immediately to save Jenkins disk space
+            docker rmi ${serviceName}:${env.IMAGE_TAG} || true
             """
         }
 }
