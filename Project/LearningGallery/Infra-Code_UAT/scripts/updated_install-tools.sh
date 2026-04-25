@@ -61,7 +61,11 @@ log_info "Installing Docker Engine & SonarQube..."
 yum install -y docker
 systemctl enable --now docker
 usermod -aG docker ec2-user
+# Add Jenkins to the Docker group
 usermod -aG docker jenkins
+# Restart Jenkins so the running daemon inherits the new Docker group permissions!
+log_info "Restarting Jenkins to apply Docker group permissions..."
+systemctl restart jenkins
 
 # Dynamically fetch the latest Docker Compose release from GitHub API
 log_info "Fetching Latest Docker Compose..."
@@ -121,10 +125,10 @@ log_success "Databases installed and running."
 # -----------------------------------------------------------------------------
 log_info "--- INSTALLED VERSIONS ---"
 git --version
-java -version 2>&1 | head -n 1
-terraform -v | head -n 1
+java -version 2>&1 
+terraform -v 
 docker --version
 docker-compose --version
-trivy --version | head -n 1
+trivy --version 
 kubectl version --client -o yaml | grep gitVersion | awk '{print "Kubectl: " $2}'
 helm version --short
