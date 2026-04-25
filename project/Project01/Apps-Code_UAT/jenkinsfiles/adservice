@@ -49,7 +49,7 @@ pipeline {
 
         stage('Update Deployment file') {
             steps {
-                dir('kubernetes-files') {
+                dir('project/Project01/Apps-Code_UAT/kubernetes-files/kubernetes-files') {
                     withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
                         sh '''
                             git config user.email "${GIT_EMAIL}"
