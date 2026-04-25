@@ -29,23 +29,22 @@ pipeline {
             }
         }
 
-        stage('Build & Push All Images Concurrently') {
-            failFast false 
-            
-            parallel {
-                stage('Ad Service') { steps { script { buildAndPush('adservice') } } }
-                stage('Cart Service') { steps { script { buildAndPush('cartservice') } } }
-                stage('Checkout Service') { steps { script { buildAndPush('checkoutservice') } } }
-                stage('Currency Service') { steps { script { buildAndPush('currencyservice') } } }
-                stage('Email Service') { steps { script { buildAndPush('emailservice') } } }
-                stage('Frontend') { steps { script { buildAndPush('frontend') } } }
-                stage('Load Generator') { steps { script { buildAndPush('loadgenerator') } } }
-                stage('Payment Service') { steps { script { buildAndPush('paymentservice') } } }
-                stage('Product Catalog') { steps { script { buildAndPush('productcatalogservice') } } }
-                stage('Recommendation') { steps { script { buildAndPush('recommendationservice') } } }
-                stage('Shipping Service') { steps { script { buildAndPush('shippingservice') } } }
-            }
-        }
+        // --- SEQUENTIAL EXECUTION START ---
+        // Jenkins will now build these exactly one at a time.
+        
+        stage('Build Ad Service') { steps { script { buildAndPush('adservice') } } }
+        stage('Build Cart Service') { steps { script { buildAndPush('cartservice') } } }
+        stage('Build Checkout Service') { steps { script { buildAndPush('checkoutservice') } } }
+        stage('Build Currency Service') { steps { script { buildAndPush('currencyservice') } } }
+        stage('Build Email Service') { steps { script { buildAndPush('emailservice') } } }
+        stage('Build Frontend') { steps { script { buildAndPush('frontend') } } }
+        stage('Build Load Generator') { steps { script { buildAndPush('loadgenerator') } } }
+        stage('Build Payment Service') { steps { script { buildAndPush('paymentservice') } } }
+        stage('Build Product Catalog') { steps { script { buildAndPush('productcatalogservice') } } }
+        stage('Build Recommendation') { steps { script { buildAndPush('recommendationservice') } } }
+        stage('Build Shipping Service') { steps { script { buildAndPush('shippingservice') } } }
+        
+        // --- SEQUENTIAL EXECUTION END ---
 
         stage('Update All YAMLs & Push to Git') {
             steps {
