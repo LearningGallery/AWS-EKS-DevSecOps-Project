@@ -41,7 +41,7 @@ pipeline {
 
         stage('Update All YAMLs & Push to Git') {
             steps {
-                dir('project/Project01/Apps-Code_UAT/kubernetes-files') {
+                dir('Project/LearningGallery/Apps-Code_UAT/kubernetes-files') {
                     withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
                         sh """
                             git config user.email "${GIT_EMAIL}"
@@ -72,7 +72,7 @@ pipeline {
 
 // Custom Groovy Function: This tells Jenkins exactly how to build ANY service
 def buildAndPush(String serviceName) {
-    dir("project/Project01/Apps-Code_UAT/src/${serviceName}") {
+    dir("Project/LearningGallery/Apps-Code_UAT/src/${serviceName}") {
         sh """
             docker build -t ${serviceName}:${env.IMAGE_TAG} .
             aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
