@@ -79,27 +79,27 @@ pipeline {
 
 // Custom Groovy Function: This tells Jenkins exactly how to build ANY service
 def buildAndPush(String serviceName) {
-    dir("Project/LearningGallery/Apps-Code_UAT/src/${serviceName}") {
-        script {
-            // 1. Define the variable
-            def dockerfilePath = "Dockerfile"
-            
-            // Check if this is the cartservice exception
-            if (serviceName == 'cartservice') {
-                dockerfilePath = "src/Dockerfile" // Tell Docker to look one folder deeper!
-            }
+    
+    // 1. Define the base path for all standard services
+    def targetDirectory = "Project/LearningGallery/Apps-Code_UAT/src/${serviceName}"
+    
+    // 2. The Cart Service exception: Tell Jenkins to navigate one folder deeper!
+    if (serviceName == 'cartservice') {
+        targetDirectory = "Project/LearningGallery/Apps-Code_UAT/src/${serviceName}/src"
+    }
 
-            // 2. KEEP the sh command INSIDE this script block!
-            // 3. NOTICE the -f ${dockerfilePath} added to the build command!
-            sh """
-                docker build -f ${dockerfilePath} -t ${serviceName}:${env.IMAGE_TAG} .
-                aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
-                docker tag ${serviceName}:${env.IMAGE_TAG} ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
-                docker push ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
-                    
-                # Clean up the local Docker image immediately to save Jenkins disk space
-                docker rmi ${serviceName}:${env.IMAGE_TAG} || true
-            """
-        } // <-- Script block closes HERE now, after the sh command finishes.
+    // 3. Jenkins navigates into the exact folder where the Dockerfile lives
+    dir(targetDirectory) {
+        // Notice we removed the -f flag! The build command is back to standard.
+        sh """
+            docker build -t ${serviceName}:${env.IMAGE_TAG} .
+            
+            aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
+            docker tag ${serviceName}:${env.IMAGE_TAG} ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
+            docker push ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
+                
+            # Clean up the local Docker image immediately to save Jenkins disk space
+            docker rmi ${serviceName}:${env.IMAGE_TAG} || true
+        """
     }
 }
