@@ -31,7 +31,7 @@ pipeline {
 
         stage("Docker Image Build") {
             steps {
-                dir('project/Project01/Apps-Code_UAT/src/adservice') {
+                dir('project/Project01/Apps-Code_UAT/src/checkoutservice') {
                     // Removed the destructive system prune
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
