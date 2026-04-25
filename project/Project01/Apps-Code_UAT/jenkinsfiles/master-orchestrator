@@ -1,0 +1,86 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION     = "ap-southeast-1"
+        AWS_ACCOUNT_ID = "485950501937"
+        GIT_REPO_NAME  = "AWS-EKS-DevSecOps-Project"
+        GIT_EMAIL      = "abutalha3005@gmail.com"
+        GIT_USER_NAME  = "LearningGallery"
+        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: "https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git"
+                script {
+                    env.GIT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.IMAGE_TAG = "${BUILD_NUMBER}-${GIT_SHA}"
+                }
+            }
+        }
+
+        stage('Build & Push All Images Concurrently') {
+            failFast true 
+            
+            parallel {
+                stage('Ad Service') { steps { script { buildAndPush('adservice') } } }
+                stage('Cart Service') { steps { script { buildAndPush('cartservice') } } }
+                stage('Checkout Service') { steps { script { buildAndPush('checkoutservice') } } }
+                stage('Currency Service') { steps { script { buildAndPush('currencyservice') } } }
+                stage('Email Service') { steps { script { buildAndPush('emailservice') } } }
+                stage('Frontend') { steps { script { buildAndPush('frontend') } } }
+                stage('Load Generator') { steps { script { buildAndPush('loadgenerator') } } }
+                stage('Payment Service') { steps { script { buildAndPush('paymentservice') } } }
+                stage('Product Catalog') { steps { script { buildAndPush('productcatalogservice') } } }
+                stage('Recommendation') { steps { script { buildAndPush('recommendationservice') } } }
+                stage('Shipping Service') { steps { script { buildAndPush('shippingservice') } } }
+            }
+        }
+
+        stage('Update All YAMLs & Push to Git') {
+            steps {
+                dir('project/Project01/Apps-Code_UAT/kubernetes-files') {
+                    withCredentials([string(credentialsId: 'my-git-pattoken', variable: 'git_token')]) {
+                        sh """
+                            git config user.email "${GIT_EMAIL}"
+                            git config user.name "${GIT_USER_NAME}"
+                            
+                            # Loop through all services and update their YAML files
+                            for SERVICE in adservice cartservice checkoutservice currencyservice emailservice frontend loadgenerator paymentservice productcatalogservice recommendationservice shippingservice; do
+                                sed -i "s#image:.*#image: ${ECR_REGISTRY}/cis-uat-\$SERVICE:${IMAGE_TAG}#g" \$SERVICE.yaml
+                            done
+                            
+                            git add .
+                            git commit -m "Deploy all services: Image tag ${IMAGE_TAG}"
+                            git pull origin main --rebase
+                            git push https://${git_token}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                        """
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
+
+// Custom Groovy Function: This tells Jenkins exactly how to build ANY service
+def buildAndPush(String serviceName) {
+    dir("project/Project01/Apps-Code_UAT/src/${serviceName}") {
+        sh """
+            docker build -t ${serviceName}:${env.IMAGE_TAG} .
+            aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${env.ECR_REGISTRY}
+            docker tag ${serviceName}:${env.IMAGE_TAG} ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
+            docker push ${env.ECR_REGISTRY}/cis-uat-${serviceName}:${env.IMAGE_TAG}
+            
+            # Clean up the local Docker image immediately to save Jenkins disk space
+            docker rmi ${serviceName}:${env.IMAGE_TAG} || true
+        """
+    }
+}
