@@ -11,6 +11,14 @@ pipeline {
     }
 
     stages {
+
+        // 1. Add this stage at the very top!
+        stage('Clean Workspace') {
+            steps {
+                cleanWs() 
+            }
+        }
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: "https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git"
@@ -22,7 +30,7 @@ pipeline {
         }
 
         stage('Build & Push All Images Concurrently') {
-            failFast true 
+            failFast false 
             
             parallel {
                 stage('Ad Service') { steps { script { buildAndPush('adservice') } } }
