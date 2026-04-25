@@ -2,7 +2,7 @@ pipeline {
     agent any 
 
     environment {
-        GIT_REPO_NAME = "AWS_MicroService-EKS-Project"
+        GIT_REPO_NAME = "AWS-EKS-DevSecOps-Project"
         GIT_EMAIL = "abutalha3005@gmail.com"
         GIT_USER_NAME = "LearningGallery"
         IMAGE_NAME = "adservice"
