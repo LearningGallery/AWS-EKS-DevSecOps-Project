@@ -42,7 +42,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: 485950501937.dkr.ecr.ap-southeast-1.amazonaws.com/cis-uat-loadgenerator:1-a7eedb0
+        image: 485950501937.dkr.ecr.ap-southeast-1.amazonaws.com/cis-uat-loadgenerator:1-01f4846
         env:
         - name: FRONTEND_ADDR
           value: "frontend:80"
@@ -55,7 +55,7 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        image: 485950501937.dkr.ecr.ap-southeast-1.amazonaws.com/cis-uat-loadgenerator:1-a7eedb0
+        image: 485950501937.dkr.ecr.ap-southeast-1.amazonaws.com/cis-uat-loadgenerator:1-01f4846
         env:
         - name: FRONTEND_ADDR
           value: "frontend:80"
