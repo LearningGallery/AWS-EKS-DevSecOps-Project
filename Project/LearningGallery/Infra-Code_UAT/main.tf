@@ -17,7 +17,7 @@ locals {
   subnet_map  = { for r in local.raw_subnets : r.id => { vpc_id = r.vpc_id, cidr_block = r.cidr_block, az = r.az, is_public = tobool(r.is_public), role = r.role } }
   ec2_map     = { for r in local.raw_ec2 : r.tier => r }
   ecr_map     = { for r in local.raw_ecr : r.service_name => { project = r.project, environment = r.environment, repo_name = r.service_name, mutability = r.image_mutability, scan_on_push = tobool(lower(r.scan_on_push)), max_images = tonumber(r.max_images) } }
-  eks_cluster_map = { for r in local.raw_eks_clusters : r.cluster_id => { project = r.project, environment = r.environment, cluster_id = r.cluster_id, k8s_version = r.k8s_version, vpc_id = r.vpc_id, subnet_ids = split(";", r.subnet_ids), endpoint_private = tobool(r.endpoint_private), endpoint_public = tobool(r.endpoint_public), cluster_iam_role = r.cluster_iam_role, node_iam_role = r.node_iam_role } }
+  eks_cluster_map = { for r in local.raw_eks_clusters : r.cluster_id => { project = r.project, environment = r.environment, cluster_id = r.cluster_id, k8s_version = r.k8s_version, vpc_id = r.vpc_id, subnet_ids = split(";", r.subnet_ids), endpoint_private = tobool(r.endpoint_private), endpoint_public = tobool(r.endpoint_public), cluster_iam_role = r.cluster_iam_role, node_iam_role = r.node_iam_role, cluster_sg = trimspace(r.cluster_sg) } }
   eks_node_map = { for r in local.raw_eks_nodes : r.ng_id => { cluster_id = r.cluster_id, instance_types = split(";", r.instance_types), capacity_type = r.capacity_type, min_size = tonumber(r.min_size), max_size = tonumber(r.max_size), desired_size = tonumber(r.desired_size), disk_size = tonumber(r.disk_size) } }
 }
 
@@ -97,10 +97,17 @@ module "core_eks" {
   environment      = each.value.environment
   cluster_name     = each.value.cluster_id
   k8s_version      = each.value.k8s_version
+
+  # Pass the VPC security group map
+  vpc_sg_ids = module.core_vpc[each.value.vpc_id].sg_ids
+
+  # Pass the filtered rules for THIS specific cluster
+  managed_sg_rules = [for r in local.raw_sg : r if r.sg_role == "eks_default"]
   
   # Dynamic Network Resolution! Looks up actual subnet IDs from the VPC module
   subnet_ids       = [for sid in each.value.subnet_ids : module.core_vpc[each.value.vpc_id].subnet_ids[sid]]
-  
+  #cluster_security_group_ids = [module.core_vpc[each.value.vpc_id].sg_ids["sg-${each.value.cluster_sg}"]]
+  cluster_security_group_ids = []
   endpoint_private = each.value.endpoint_private
   endpoint_public  = each.value.endpoint_public
 
@@ -129,4 +136,26 @@ resource "aws_iam_openid_connect_provider" "eks" {
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks[each.key].certificates[0].sha1_fingerprint]
   url             = each.value.oidc_issuer_url
+}
+
+# ---------------------------------------------------------
+# EKS Access Entry (Grants EC2 Node Admin Access to kubectl)
+# ---------------------------------------------------------
+resource "aws_eks_access_entry" "ec2_profile_access" {
+  # Dynamically pulls the cluster name from your EKS module
+  cluster_name  = module.core_eks["eks_main"].cluster_name
+  
+  # Dynamically pulls the exact ARN of your EC2 profile from your IAM module
+  principal_arn = module.core_iam.role_arns["ec2-profile"]
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "ec2_profile_admin" {
+  cluster_name  = aws_eks_access_entry.ec2_profile_access.cluster_name
+  principal_arn = aws_eks_access_entry.ec2_profile_access.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
 }

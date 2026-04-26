@@ -22,6 +22,13 @@ resource "aws_eks_cluster" "main" {
     subnet_ids              = var.subnet_ids
     endpoint_private_access = var.endpoint_private
     endpoint_public_access  = var.endpoint_public
+    security_group_ids      = var.cluster_security_group_ids
+  }
+
+  # Add this block right here!
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
   }
 
   encryption_config {
@@ -30,6 +37,25 @@ resource "aws_eks_cluster" "main" {
   }
 
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+}
+
+resource "aws_security_group_rule" "eks_managed_rules" {
+  for_each = { for r in var.managed_sg_rules : 
+    "${r.sg_role}-${r.type}-${r.protocol}-${r.from_port}-${r.to_port}-${r.source}" => r 
+  }
+
+  # This targets the hidden SG AWS created for the cluster
+  security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+
+  type      = each.value.type
+  from_port = tonumber(each.value.from_port)
+  to_port   = tonumber(each.value.to_port)
+  protocol  = each.value.protocol
+
+  cidr_blocks = each.value.source_type == "cidr" ? [each.value.source] : null
+  
+  # Look up the VPC SG IDs from the map we pass in
+  source_security_group_id = each.value.source_type == "sg" ? var.vpc_sg_ids["sg-${each.value.source}"] : null
 }
 
 # -----------------------------------------------------------------------------

@@ -1,4 +1,7 @@
 vpc_id,sg_role,type,from_port,to_port,protocol,source_type,source,description
+core,eks_default,ingress,0,65535,tcp,sg,web,Allow Intra-Node TCP Comm
+core,eks_default,ingress,0,65535,udp,sg,web,Allow Intra-Node UDP Comm
+
 core,web,ingress,443,443,tcp,cidr,0.0.0.0/0,Allow HTTPS
 core,web,ingress,22,22,tcp,cidr,0.0.0.0/0,Allow SSH
 core,web,ingress,3389,3389,tcp,cidr,0.0.0.0/0,Allow RDP
@@ -7,16 +10,12 @@ core,web,ingress,8080,8080,tcp,cidr,0.0.0.0/0,Allow JenKins
 core,web,ingress,9000,9000,tcp,cidr,0.0.0.0/0,Allow SonarQube
 core,web,ingress,9090,9090,tcp,cidr,0.0.0.0/0,Allow Prometheus
 core,web,ingress,3306,3306,tcp,cidr,0.0.0.0/0,Allow MySQL
+core,web,ingress,0,65535,tcp,cidr,0.0.0.0/0,Allow Intra-Node TCP Comm
+core,web,ingress,0,65535,udp,cidr,0.0.0.0/0,Allow Intra-Node UDP Comm
 
-core,web,egress,443,443,tcp,cidr,0.0.0.0/0,Allow outbound HTTPS for SSM
 core,web,egress,80,80,tcp,cidr,0.0.0.0/0,Allow outbound HTTP for Yum/S3
-
-core,eks,ingress,443,443,tcp,sg,web,Allow Web to EKS
-core,eks,ingress,0,65535,tcp,sg,eks,Allow Intra-Node TCP Comm
-core,eks,ingress,0,65535,udp,sg,eks,Allow Intra-Node UDP Comm
-
-core,eks,egress,443,443,tcp,cidr,0.0.0.0/0,Allow outbound HTTPS for EKS API and ECR
-core,eks,egress,53,53,udp,cidr,0.0.0.0/0,Allow outbound DNS
-core,eks,egress,53,53,tcp,cidr,0.0.0.0/0,Allow outbound DNS TCP
-core,eks,egress,0,65535,tcp,sg,eks,Allow Intra-Node Egress TCP
-core,eks,egress,0,65535,udp,sg,eks,Allow Intra-Node Egress UDP
+core,web,egress,443,443,tcp,cidr,0.0.0.0/0,Allow outbound HTTPS for EKS API and ECR
+core,web,egress,53,53,udp,cidr,0.0.0.0/0,Allow outbound DNS
+core,web,egress,53,53,tcp,cidr,0.0.0.0/0,Allow outbound DNS TCP
+core,web,egress,0,65535,tcp,cidr,0.0.0.0/0,Allow Intra-Node Egress TCP
+core,web,egress,0,65535,udp,cidr,0.0.0.0/0,Allow Intra-Node Egress UDP

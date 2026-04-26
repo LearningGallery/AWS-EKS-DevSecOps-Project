@@ -41,20 +41,35 @@ resource "aws_route" "route" {
   gateway_id             = each.value.target_type == "igw" ? aws_internet_gateway.internet_gateway[0].id : null
 }
 resource "aws_security_group" "security_group" {
-  for_each    = toset([for k, v in var.subnets : v.role])
-  name        = "${local.base}-${each.key}-sg"
-  vpc_id      = aws_vpc.vpc.id
-  tags        = { Name = "sg-${local.base}-${each.key}-01" }
+  # FIX: Combine roles from subnets and rules to ensure the 'app' or 'eks' 
+  # groups exist even if they don't have subnets yet.
+  for_each = toset(distinct(concat(
+    [for k, v in var.subnets : v.role],
+    [for r in var.sg_rules : r.sg_role if r.sg_role != "eks_default"]
+  )))
+  name   = "${local.base}-${each.key}-sg"
+  vpc_id = aws_vpc.vpc.id
+  tags   = { Name = "sg-${local.base}-${each.key}-01" }
 }
+
 resource "aws_security_group_rule" "security_group_rule" {
-  for_each                 = { for idx, rule in var.sg_rules : "${rule.sg_role}-${rule.type}-${idx}" => rule }
-  security_group_id        = aws_security_group.security_group[each.value.sg_role].id
-  type                     = each.value.type
-  from_port                = tonumber(each.value.from_port)
-  to_port                  = tonumber(each.value.to_port)
-  protocol                 = each.value.protocol
-  cidr_blocks              = each.value.source_type == "cidr" ? [each.value.source] : null
-  source_security_group_id = each.value.source_type == "sg" ? aws_security_group.security_group[each.value.source].id : null
+  # FIX: Removed 'idx' and replaced with attributes to prevent row-shift errors
+  for_each = { for r in var.sg_rules : 
+    "${r.sg_role}-${r.type}-${r.protocol}-${r.from_port}-${r.to_port}-${r.source}" => r 
+    if r.sg_role != "eks_default" # Do NOT handle eks_default here (prevents cycle)
+  }
+
+  security_group_id = aws_security_group.security_group[each.value.sg_role].id
+  type              = each.value.type
+  from_port         = tonumber(each.value.from_port)
+  to_port           = tonumber(each.value.to_port)
+  protocol          = each.value.protocol
+
+  cidr_blocks = each.value.source_type == "cidr" ? [each.value.source] : null
+  
+  source_security_group_id = each.value.source_type == "sg" ? (
+     aws_security_group.security_group[each.value.source].id
+  ) : null
 }
 
 resource "aws_network_acl" "network_acl" {

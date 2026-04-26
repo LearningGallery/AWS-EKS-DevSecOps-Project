@@ -23,3 +23,20 @@ variable "node_groups" {
     disk_size      = number
   }))
 }
+
+variable "cluster_security_group_ids" {
+  description = "List of Security Group IDs to attach to the EKS Control Plane"
+  type        = list(string)
+}
+
+variable "vpc_sg_ids" {
+  description = "Map of security group IDs from the VPC module"
+  type        = map(string)
+  default     = {}
+}
+
+variable "managed_sg_rules" {
+  description = "List of rules filtered from the CSV specifically for the managed SG"
+  type        = any
+  default     = []
+}
