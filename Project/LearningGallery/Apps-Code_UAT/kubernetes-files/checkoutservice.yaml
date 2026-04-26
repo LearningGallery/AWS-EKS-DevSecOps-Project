@@ -27,7 +27,7 @@ spec:
                 - ALL
             privileged: false
             readOnlyRootFilesystem: true
-          image: 485950501937.dkr.ecr.ap-southeast-1.amazonaws.com/cis-uat-checkoutservice:2-b581680
+          image: 485950501937.dkr.ecr.ap-southeast-1.amazonaws.com/cis-uat-checkoutservice:1-01f4846
           ports:
           - containerPort: 5050
           readinessProbe:
