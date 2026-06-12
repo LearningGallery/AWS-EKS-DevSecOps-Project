@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+    parameters {
+        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: '🔧 Select the Terraform action')
+    }
+    environment { TF_DIR = 'eks-terraform' }
+
+    stages {
+        stage('Checkout from Git') {
+            steps { echo 'Checking out Git repository...' }
+        }
+        stage('Initialize & Validate') {
+            steps {
+                dir("${TF_DIR}") {
+                    sh 'terraform init --reconfigure'
+                    sh 'terraform validate'
+                    sh 'terraform fmt -check'
+                }
+            }
+        }
+        stage('Security Scan (Trivy IaC)') {
+            steps {
+                dir("${TF_DIR}") {
+                    echo 'Scanning EKS Terraform code for Zero Trust misconfigurations...'
+                    sh 'trivy fs --scanners misconfig --severity CRITICAL,HIGH --exit-code 1 .'
+                }
+            }
+        }
+        stage('Terraform Plan') {
+            steps { dir("${TF_DIR}") { sh 'terraform plan -out=tfplan' } }
+        }
+        stage('Terraform Apply') {
+            when { expression { params.ACTION == 'apply' } }
+            steps { dir("${TF_DIR}") { sh 'terraform apply -auto-approve tfplan' } }
+        }
+        stage('Terraform Destroy') {
+            when { expression { params.ACTION == 'destroy' } }
+            steps { dir("${TF_DIR}") { sh 'terraform destroy -auto-approve' } }
+        }
+    }
+}

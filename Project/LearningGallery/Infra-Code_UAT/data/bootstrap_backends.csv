@@ -1,0 +1,2 @@
+id,project,env,bucket_role,table_role
+core_uat,cis,uat,tfstate,tflocks
